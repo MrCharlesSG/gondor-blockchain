@@ -11,7 +11,7 @@ async function main() {
 
   // Get the final contract address
   const address = sbt.target;
-  console.log(`\nSuccess! GondorSovereignIdentity contract deployed at address: ${address}`);
+  console.log(`<br>Success! GondorSovereignIdentity contract deployed at address: ${address}`);
 
   console.log("Deploying ZK Verifier...");
   const verifier = await hre.ethers.deployContract("Groth16Verifier");

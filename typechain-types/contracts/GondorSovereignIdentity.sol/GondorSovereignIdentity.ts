@@ -32,8 +32,10 @@ export interface GondorSovereignIdentityInterface extends Interface {
       | "canonicalRoots"
       | "getApproved"
       | "handoverSovereignty"
+      | "heartbeatInterval"
       | "identityStates"
       | "isApprovedForAll"
+      | "isReputationExpired"
       | "lastHeartbeat"
       | "name"
       | "owner"
@@ -41,10 +43,12 @@ export interface GondorSovereignIdentityInterface extends Interface {
       | "renounceOwnership"
       | "reputationLevels"
       | "reputationLevelsRealized"
+      | "revokeExpiredReputation"
       | "safeMint"
       | "safeTransferFrom(address,address,uint256)"
       | "safeTransferFrom(address,address,uint256,bytes)"
       | "setApprovalForAll"
+      | "setHeartbeatInterval"
       | "setVerifier"
       | "supportsInterface"
       | "symbol"
@@ -62,6 +66,7 @@ export interface GondorSovereignIdentityInterface extends Interface {
       | "ApprovalForAll"
       | "IdentityHandedOver"
       | "OwnershipTransferred"
+      | "ReputationExpired"
       | "ReputationUpdated"
       | "RootAnchored"
       | "Transfer"
@@ -93,12 +98,20 @@ export interface GondorSovereignIdentityInterface extends Interface {
     values: [BigNumberish, AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "heartbeatInterval",
+    values?: undefined
+  ): string;
+  encodeFunctionData(
     functionFragment: "identityStates",
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "isApprovedForAll",
     values: [AddressLike, AddressLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isReputationExpired",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "lastHeartbeat",
@@ -123,6 +136,10 @@ export interface GondorSovereignIdentityInterface extends Interface {
     values: [BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "revokeExpiredReputation",
+    values: [BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "safeMint",
     values: [AddressLike, string]
   ): string;
@@ -137,6 +154,10 @@ export interface GondorSovereignIdentityInterface extends Interface {
   encodeFunctionData(
     functionFragment: "setApprovalForAll",
     values: [AddressLike, boolean]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setHeartbeatInterval",
+    values: [BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setVerifier",
@@ -195,11 +216,19 @@ export interface GondorSovereignIdentityInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "heartbeatInterval",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "identityStates",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
     functionFragment: "isApprovedForAll",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "isReputationExpired",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -221,6 +250,10 @@ export interface GondorSovereignIdentityInterface extends Interface {
     functionFragment: "reputationLevelsRealized",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "revokeExpiredReputation",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "safeMint", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "safeTransferFrom(address,address,uint256)",
@@ -232,6 +265,10 @@ export interface GondorSovereignIdentityInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "setApprovalForAll",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setHeartbeatInterval",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -328,6 +365,18 @@ export namespace OwnershipTransferredEvent {
   export interface OutputObject {
     previousOwner: string;
     newOwner: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace ReputationExpiredEvent {
+  export type InputTuple = [tokenId: BigNumberish];
+  export type OutputTuple = [tokenId: bigint];
+  export interface OutputObject {
+    tokenId: bigint;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -457,6 +506,8 @@ export interface GondorSovereignIdentity extends BaseContract {
     "nonpayable"
   >;
 
+  heartbeatInterval: TypedContractMethod<[], [bigint], "view">;
+
   identityStates: TypedContractMethod<
     [arg0: BigNumberish],
     [
@@ -471,6 +522,12 @@ export interface GondorSovereignIdentity extends BaseContract {
 
   isApprovedForAll: TypedContractMethod<
     [owner: AddressLike, operator: AddressLike],
+    [boolean],
+    "view"
+  >;
+
+  isReputationExpired: TypedContractMethod<
+    [tokenId: BigNumberish],
     [boolean],
     "view"
   >;
@@ -491,6 +548,12 @@ export interface GondorSovereignIdentity extends BaseContract {
     [arg0: BigNumberish],
     [bigint],
     "view"
+  >;
+
+  revokeExpiredReputation: TypedContractMethod<
+    [tokenId: BigNumberish],
+    [void],
+    "nonpayable"
   >;
 
   safeMint: TypedContractMethod<
@@ -518,6 +581,12 @@ export interface GondorSovereignIdentity extends BaseContract {
 
   setApprovalForAll: TypedContractMethod<
     [operator: AddressLike, approved: boolean],
+    [void],
+    "nonpayable"
+  >;
+
+  setHeartbeatInterval: TypedContractMethod<
+    [_interval: BigNumberish],
     [void],
     "nonpayable"
   >;
@@ -598,6 +667,9 @@ export interface GondorSovereignIdentity extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "heartbeatInterval"
+  ): TypedContractMethod<[], [bigint], "view">;
+  getFunction(
     nameOrSignature: "identityStates"
   ): TypedContractMethod<
     [arg0: BigNumberish],
@@ -617,6 +689,9 @@ export interface GondorSovereignIdentity extends BaseContract {
     [boolean],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "isReputationExpired"
+  ): TypedContractMethod<[tokenId: BigNumberish], [boolean], "view">;
   getFunction(
     nameOrSignature: "lastHeartbeat"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
@@ -638,6 +713,9 @@ export interface GondorSovereignIdentity extends BaseContract {
   getFunction(
     nameOrSignature: "reputationLevelsRealized"
   ): TypedContractMethod<[arg0: BigNumberish], [bigint], "view">;
+  getFunction(
+    nameOrSignature: "revokeExpiredReputation"
+  ): TypedContractMethod<[tokenId: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "safeMint"
   ): TypedContractMethod<
@@ -671,6 +749,9 @@ export interface GondorSovereignIdentity extends BaseContract {
     [void],
     "nonpayable"
   >;
+  getFunction(
+    nameOrSignature: "setHeartbeatInterval"
+  ): TypedContractMethod<[_interval: BigNumberish], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "setVerifier"
   ): TypedContractMethod<
@@ -747,6 +828,13 @@ export interface GondorSovereignIdentity extends BaseContract {
     OwnershipTransferredEvent.OutputObject
   >;
   getEvent(
+    key: "ReputationExpired"
+  ): TypedContractEvent<
+    ReputationExpiredEvent.InputTuple,
+    ReputationExpiredEvent.OutputTuple,
+    ReputationExpiredEvent.OutputObject
+  >;
+  getEvent(
     key: "ReputationUpdated"
   ): TypedContractEvent<
     ReputationUpdatedEvent.InputTuple,
@@ -818,6 +906,17 @@ export interface GondorSovereignIdentity extends BaseContract {
       OwnershipTransferredEvent.InputTuple,
       OwnershipTransferredEvent.OutputTuple,
       OwnershipTransferredEvent.OutputObject
+    >;
+
+    "ReputationExpired(uint256)": TypedContractEvent<
+      ReputationExpiredEvent.InputTuple,
+      ReputationExpiredEvent.OutputTuple,
+      ReputationExpiredEvent.OutputObject
+    >;
+    ReputationExpired: TypedContractEvent<
+      ReputationExpiredEvent.InputTuple,
+      ReputationExpiredEvent.OutputTuple,
+      ReputationExpiredEvent.OutputObject
     >;
 
     "ReputationUpdated(uint256,uint256)": TypedContractEvent<

@@ -30,6 +30,7 @@ interface IGondorVerifier {
  */
 contract GondorSovereignIdentity is ERC721, Ownable {
     uint256 private _nextTokenId;
+    uint256 public heartbeatInterval = 30 days;
 
     mapping(uint256 => string) public tokenDIDs;
     mapping(uint256 => uint256) public reputationLevels;
@@ -49,6 +50,7 @@ contract GondorSovereignIdentity is ERC721, Ownable {
     event RootAnchored(bytes32 indexed root);
     event IdentityHandedOver(uint256 indexed tokenId, address indexed oldOwner, address indexed newOwner);
     event VerifierSet(uint256 indexed batchSize, address indexed verifierAddress);
+    event ReputationExpired(uint256 indexed tokenId);
 
     constructor() ERC721("GondorSovereignIdentity", "GSID") Ownable(msg.sender) {}
 
@@ -90,6 +92,13 @@ contract GondorSovereignIdentity is ERC721, Ownable {
         require(batchSize > 0, "Gondor: Batch size must be greater than 0");
         verifiers[batchSize] = verifierAddress;
         emit VerifierSet(batchSize, verifierAddress);
+    }
+
+    /**
+     * @dev Updates the heartbeat interval.
+     */
+    function setHeartbeatInterval(uint256 _interval) public onlyOwner {
+        heartbeatInterval = _interval;
     }
 
     /**
@@ -183,6 +192,29 @@ contract GondorSovereignIdentity is ERC721, Ownable {
         lastHeartbeat[tokenId] = block.timestamp;
 
         emit ReputationUpdated(tokenId, computedLevel);
+    }
+
+    /**
+     * @dev Checks if a token's reputation is expired based on the heartbeat interval.
+     */
+    function isReputationExpired(uint256 tokenId) public view returns (bool) {
+        require(_ownerOf(tokenId) != address(0), "Gondor: Non-existent token");
+        return block.timestamp > lastHeartbeat[tokenId] + heartbeatInterval;
+    }
+
+    /**
+     * @dev Revokes the reputation of a token if its heartbeat has expired.
+     * Can be called by anyone.
+     */
+    function revokeExpiredReputation(uint256 tokenId) public {
+        require(_ownerOf(tokenId) != address(0), "Gondor: Non-existent token");
+        require(isReputationExpired(tokenId), "Gondor: Heartbeat has not expired");
+
+        reputationLevels[tokenId] = 0;
+        reputationLevelsRealized[tokenId] = 0;
+        
+        emit ReputationExpired(tokenId);
+        emit ReputationUpdated(tokenId, 0);
     }
 
     /**

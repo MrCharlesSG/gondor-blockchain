@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 async function main() {
-  const configPath = path.resolve(__dirname, "../../Gondor/config-local.yaml");
+  const configPath = path.resolve(__dirname, "../../Gondor/configs/config-local.yaml");
   if (!fs.existsSync(configPath)) {
     console.error("config-local.yaml not found!");
     process.exit(1);
@@ -21,6 +21,10 @@ async function main() {
 
   const sbt = await hre.ethers.getContractAt("GondorSovereignIdentity", contractAddress);
 
+  const heartbeatInterval = await sbt.heartbeatInterval();
+  console.log(`Global Heartbeat Interval: ${heartbeatInterval.toString()} seconds (${Number(heartbeatInterval) / 86400} days)`);
+
+
   for (let tokenId = 0; tokenId < 3; tokenId++) {
     try {
       const owner = await sbt.ownerOf(tokenId);
@@ -28,6 +32,7 @@ async function main() {
       const repLevel = await sbt.reputationLevels(tokenId);
       const state = await sbt.identityStates(tokenId);
       const lastHeartbeat = await sbt.lastHeartbeat(tokenId);
+      const isExpired = await sbt.isReputationExpired(tokenId);
       const reputationLevelsRealized = await sbt.reputationLevelsRealized(tokenId);
 
       // In Solidity, negative reputation levels were cast to uint256 using 2's complement
@@ -46,7 +51,7 @@ async function main() {
         repLevelRealizedNum = repLevelRealizedNum - modulus;
       }
 
-      console.log(`\n--- TOKEN ID: ${tokenId} ---`);
+      console.log(`<br>--- TOKEN ID: ${tokenId} ---`);
       console.log(`Owner:         ${owner}`);
       console.log(`DID:           ${did}`);
       console.log(`Rep Level:     ${repLevelNum.toString()}%`);
@@ -55,12 +60,13 @@ async function main() {
       console.log(`Total Cost:    ${state.totalCost.toString()}`);
       console.log(`Cost Realized: ${state.totalCostRealized.toString()}`);
       console.log(`Last Heartbt:  ${new Date(Number(lastHeartbeat) * 1000).toLocaleString()}`);
+      console.log(`Status:        ${isExpired ? "EXPIRED" : "ACTIVE"}`);
     } catch (e: any) {
       if (e.message.includes("Non-existent token")) {
-        console.log(`\n--- TOKEN ID: ${tokenId} ---`);
+        console.log(`<br>--- TOKEN ID: ${tokenId} ---`);
         console.log(`Does not exist yet.`);
       } else {
-        console.log(`\n--- TOKEN ID: ${tokenId} ---`);
+        console.log(`<br>--- TOKEN ID: ${tokenId} ---`);
         console.log(`Error fetching: ${e.message}`);
       }
     }
