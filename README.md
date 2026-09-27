@@ -2,6 +2,8 @@
 
 This repository manages the on-chain smart contracts and deployment infrastructure for the **Gondor** ecosystem. Built using **Hardhat**, it deploys the **Soulbound Token (SBT)** for user identity, binds the custom **Zero-Knowledge (ZK) Prover Verifier** to on-chain state updates, and handles administrative scripts.
 
+The contract is published on Amoy: https://amoy.polygonscan.com/address/0xaE799d6a8F34e8170950e4E11eF33f0f16A97EaF
+
 ---
 
 ## Smart Contracts (`contracts/`)
